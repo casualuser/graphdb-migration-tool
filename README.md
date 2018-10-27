@@ -2,7 +2,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/abbasc52/graphdb-migration-tool/badge.svg?branch=master)](https://coveralls.io/github/abbasc52/graphdb-migration-tool?branch=master)
 [![MIT license](http://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
-# graph-migration-tool
+# graphdb-migration-tool
 This tool allows you to migrate existing database to a graph database
 
 Conversions supported:
