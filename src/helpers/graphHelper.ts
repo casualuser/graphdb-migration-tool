@@ -1,26 +1,33 @@
 import { Edge, Vertex } from '../models/graph-model';
 
-export function getVertexQuery(vertexObj: Vertex): string {
+export function getAddVertexQuery(vertexObj: Vertex): string {
   let query = `g.addV('${vertexObj.label}')`;
-  if (vertexObj.properties) {
-    for (const key of Object.keys(vertexObj.properties)) {
-      let value = vertexObj.properties[key];
-      if (typeof value === 'string') {
-        value = `'${value}'`;
-      }
-      query += `.property('${key}',${value})`;
-    }
-  }
-  return query;
+  return query + getPropertiesQuery(vertexObj);
 }
 
-export function getEdgeQuery(edgeObj: Edge): string {
+export function getUpdateVertexQuery(vertexObj: Vertex): string {
+  let query = `g.V().hasId('${vertexObj.properties.id}')`;
+  return query + getPropertiesQuery(vertexObj);
+}
+
+export function getUpdateEdgeQuery(vertexObj: Vertex): string {
+  let query = `g.E().hasId('${vertexObj.properties.id}')`;
+  return query + getPropertiesQuery(vertexObj);
+}
+
+export function getAddEdgeQuery(edgeObj: Edge): string {
   let query =
     `g.V().has('id','${edgeObj.from}').addE('${edgeObj.label}')` +
     `.to(g.V().has('id','${edgeObj.to}'))`;
-  if (edgeObj.properties) {
-    for (const key of Object.keys(edgeObj.properties)) {
-      let value = edgeObj.properties[key];
+
+  return query + getPropertiesQuery(edgeObj);
+}
+
+export function getPropertiesQuery(obj: Vertex | Edge): string {
+  let query = '';
+  if (obj.properties) {
+    for (const key of Object.keys(obj.properties)) {
+      let value = obj.properties[key];
       if (typeof value === 'string') {
         value = `'${value}'`;
       }

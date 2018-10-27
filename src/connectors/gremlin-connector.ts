@@ -2,12 +2,14 @@ import * as async from 'async';
 import * as convertHrtime from 'convert-hrtime';
 import * as Gremlin from 'gremlin';
 import { stdout as log } from 'single-line-log';
-import * as GraphHelper from '../gremlin-helpers/graphHelper';
-import { Edge, GraphInfo, Vertex } from '../models/graph-model';
+import * as GraphHelper from '../helpers/graphHelper';
+import { Edge, GraphInfo, Vertex, etype } from '../models/graph-model';
+import { isNullOrUndefined } from 'util';
 
 export class GremlinConnector {
   private client: Gremlin.GremlinClient;
   private batchSize: number;
+  private upsert: boolean;
   private defaultBatchSize = 10;
 
   constructor(config: any) {
@@ -20,6 +22,7 @@ export class GremlinConnector {
     this.batchSize = config.batchSize
       ? config.batchSize
       : this.defaultBatchSize;
+    this.upsert = config.upsert;
   }
 
   public createGraph(graphInfo: GraphInfo, callback: any) {
@@ -42,13 +45,24 @@ export class GremlinConnector {
       vertices,
       this.batchSize,
       (value, key, cb) => {
-        const command = GraphHelper.getVertexQuery(value);
-        this.client.execute(command, (err, res) => {
-          if (!err) {
-            log(`Added vertices: ${(key as number) + 1}/${vertices.length}`);
+        this.checkExists(
+          etype.vertex,
+          value.properties.id,
+          (err: any, res: boolean) => {
+            if (err) cb(err);
+            const command = res
+              ? GraphHelper.getUpdateVertexQuery(value)
+              : GraphHelper.getAddVertexQuery(value);
+            this.client.execute(command, (err, res) => {
+              if (!err) {
+                log(
+                  `Added vertices: ${(key as number) + 1}/${vertices.length}`
+                );
+              }
+              cb(err as any);
+            });
           }
-          cb(err as any);
-        });
+        );
       },
       err => {
         if (err) {
@@ -71,7 +85,7 @@ export class GremlinConnector {
       edges,
       this.batchSize,
       (value, key, cb) => {
-        const command = GraphHelper.getEdgeQuery(value);
+        const command = GraphHelper.getAddEdgeQuery(value);
         this.client.execute(command, (err, res) => {
           if (!err) {
             log(`Adding edges: ${(key as number) + 1}/${edges.length}`);
@@ -94,5 +108,23 @@ export class GremlinConnector {
 
   public closeConnection() {
     this.client.closeConnection();
+  }
+
+  public checkExists(type: etype, id: string, callback: any) {
+    if (!this.upsert || isNullOrUndefined(id)) {
+      callback(null, false);
+      return;
+    }
+    let query: string;
+    if (type === etype.vertex) {
+      query = `g.V().hasId('${id}').count()`;
+    } else {
+      query = `g.E().hasId('${id}').count()`;
+    }
+    this.client.execute(query, (err, res) => {
+      var exists = false;
+      if (res && res.length > 0 && res[0] > 0) exists = true;
+      callback(err, exists);
+    });
   }
 }

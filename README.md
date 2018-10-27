@@ -54,17 +54,20 @@ Conversions supported:
 ```
 
 ### Graph Config File
-```json
+```json5
 {
   "host":"server",
   "password":"password",
   "user": "username",
   "port": "443",
-  "ssl": true
+  "ssl": true,
+  "batchSize": 10,  //No. of gremlin queries to execute in parallel (Default: 10)
+  "upsert": false //Set to true if you want to upsert vertices or edges (Default: false)
+
 }
 ```
 
-<b>Note: </b>For Azure cosmos graph DB , user is 'dbs/{dbName}/colls/{collectionName}' and password is its secretKey
+<b>Note: </b>For Azure cosmos graph DB , user is '/dbs/{dbName}/colls/{collectionName}' and password is its secretKey
 
 ## Template
 To transform data to a graph, you need to transform the data into vertex and edge format. 
