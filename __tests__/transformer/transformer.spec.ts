@@ -43,7 +43,7 @@ describe('Given transformer is initialised', () => {
 
   it('when parseTemplate is called it with guid helper it should return the parsed data', () => {
     var guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    var result = transformer.parseTemplate(`{{$guid}}`, { });
+    var result = transformer.parseTemplate(`{{$guid}}`, {});
     expect(result).toMatch(guidRegex);
   });
 

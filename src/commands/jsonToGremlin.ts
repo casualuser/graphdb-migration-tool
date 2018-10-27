@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra';
-import * as GraphHelper from '../gremlin-helpers/graphHelper';
+import * as GraphHelper from '../helpers/graphHelper';
 import graphSchema from '../schema/graph-schema';
 import { Transformer } from '../transformer/transformer';
 
@@ -22,10 +22,10 @@ export function jsonToGremlin(inputJSON: any[], template: string): string[] {
   const transformer = new Transformer({});
   const result = transformer.transformJSON(template, inputJSON, graphSchema);
   const vertexCmdList: string[] = result.vertices.map(vertex =>
-    GraphHelper.getVertexQuery(vertex)
+    GraphHelper.getAddVertexQuery(vertex)
   );
   const edgeCmdList: string[] = result.edges.map(edge =>
-    GraphHelper.getEdgeQuery(edge)
+    GraphHelper.getAddEdgeQuery(edge)
   );
   return vertexCmdList.concat(edgeCmdList);
 }

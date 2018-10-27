@@ -2,7 +2,7 @@ import * as Ajv from 'ajv';
 import * as handlebars from 'handlebars';
 import * as jsonlint from 'jsonlint';
 import * as uuid from 'uuid';
-import * as GraphHelper from '../gremlin-helpers/graphHelper';
+import * as GraphHelper from '../helpers/graphHelper';
 import { Edge, GraphInfo, Vertex } from '../models/graph-model';
 import { ajvErrorLint } from '../utils/ajvErrorLint';
 
