@@ -1,10 +1,20 @@
 #!/usr/bin/env node --no-warnings
-
 import * as program from 'commander';
-import { jsonToGraphCmd, jsonToGremlinCmd, sqlToGraphCmd } from './index';
+import {
+  jsonToGraphCmd,
+  jsonToGremlinCmd,
+  sqlToGraphCmd,
+  runCmd,
+} from './index';
 
 program
   .version('0.1.0')
+  .command('run <configFile>')
+  .action((configFile: string) => {
+    console.log('Executing run command');
+    runCmd(configFile);
+  });
+program
   .command('jsontogremlin <inputFile> <templateFile> <outputFile>')
   .action((inputFile: string, templateFile: string, outputFile: string) => {
     console.log('Executing JSON to Gremlin command');

@@ -1,6 +1,6 @@
 import * as fs from 'fs-extra';
 import * as GraphHelper from '../helpers/graphHelper';
-import graphSchema from '../schema/graph-schema';
+import * as graphSchema from '../schema/graph-schema.json';
 import { Transformer } from '../transformer/transformer';
 
 export function jsonToGremlinCmd(

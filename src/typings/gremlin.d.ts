@@ -1,3 +1,4 @@
+/* tslint:disable */
 declare module 'gremlin' {
   import { EventEmitter } from 'events';
   import { Readable } from 'stream';

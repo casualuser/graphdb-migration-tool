@@ -2,14 +2,21 @@ import * as Ajv from 'ajv';
 import * as handlebars from 'handlebars';
 import * as jsonlint from 'jsonlint';
 import * as uuid from 'uuid';
+import * as fs from 'fs-extra';
 import * as GraphHelper from '../helpers/graphHelper';
 import { Edge, GraphInfo, Vertex } from '../models/graph-model';
 import { ajvErrorLint } from '../utils/ajvErrorLint';
+import {
+  RunTransformConfigTemplatePath,
+  RunTransformConfigStringTemplate,
+} from '../models/config-model';
 
 export class Transformer {
   private validator: Ajv.Ajv;
-
-  constructor(config: any) {
+  private config: RunTransformConfigStringTemplate &
+    RunTransformConfigTemplatePath;
+  constructor(config?: any) {
+    this.config = config;
     this.registerHelpers();
     this.validator = new Ajv({ jsonPointers: true });
   }
@@ -43,6 +50,16 @@ export class Transformer {
     return { vertices, edges };
   }
 
+  public transformInput(data: any[], schema: object, callback: any) {
+    const template = this.getTemplateFromConfig();
+    if (template) {
+      const result = this.transformJSON(template, data, schema);
+      callback(null, result);
+    } else {
+      callback(null, data);
+    }
+  }
+
   public validateJSON(json: any, schema: object) {
     const valid = this.validator.validate(schema, json);
     if (!valid) {
@@ -54,6 +71,18 @@ export class Transformer {
       throw new Error('Schema validation error: \n' + output);
     }
     return valid;
+  }
+
+  private getTemplateFromConfig() {
+    let template = '';
+    if (this.config && this.config.template) {
+      template = this.config.template;
+    } else if (this.config && this.config.templatePath) {
+      template = fs.readFileSync(this.config.templatePath, {
+        encoding: 'utf-8',
+      });
+    }
+    return template;
   }
 
   private registerHelpers(): void {

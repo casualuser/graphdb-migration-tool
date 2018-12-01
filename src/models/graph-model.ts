@@ -31,7 +31,7 @@ export interface GraphCmd {
   edgeCmd: string[];
 }
 
-export enum etype {
+export enum Etype {
   vertex = 'vertex',
   edge = 'edge',
 }

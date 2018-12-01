@@ -1,10 +1,13 @@
 import * as async from 'async';
 import * as Sequelize from 'sequelize';
+import { InputConnector } from '../models/connector-model';
 
-export class SQLConnnector {
+export class SQLInputConnnector implements InputConnector {
   private connection: Sequelize.Sequelize;
+  private query: string;
   constructor(config: any) {
     config.options = config.options || {};
+    this.query = config.query;
     config.options.rowCollectionOnRequestCompletion = true;
     this.connection = new Sequelize(
       config.database,
@@ -29,12 +32,19 @@ export class SQLConnnector {
       .query(query, { raw: false, type: Sequelize.QueryTypes.SELECT })
       .then(
         response => {
-          callback(null, response.length, response);
+          callback(null, response);
         },
         error => {
           callback(error);
         }
       );
+  }
+
+  public readInput(callback: any): void {
+    this.queryDatabase(this.query, (...args: any[]) => {
+      this.closeConnection();
+      callback(...args);
+    });
   }
 
   public closeConnection() {

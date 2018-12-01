@@ -1,22 +1,22 @@
 import { Edge, Vertex } from '../models/graph-model';
 
 export function getAddVertexQuery(vertexObj: Vertex): string {
-  let query = `g.addV('${vertexObj.label}')`;
+  const query = `g.addV('${vertexObj.label}')`;
   return query + getPropertiesQuery(vertexObj);
 }
 
 export function getUpdateVertexQuery(vertexObj: Vertex): string {
-  let query = `g.V().hasId('${vertexObj.properties.id}')`;
+  const query = `g.V().hasId('${vertexObj.properties.id}')`;
   return query + getPropertiesQuery(vertexObj);
 }
 
 export function getUpdateEdgeQuery(vertexObj: Vertex): string {
-  let query = `g.E().hasId('${vertexObj.properties.id}')`;
+  const query = `g.E().hasId('${vertexObj.properties.id}')`;
   return query + getPropertiesQuery(vertexObj);
 }
 
 export function getAddEdgeQuery(edgeObj: Edge): string {
-  let query =
+  const query =
     `g.V().has('id','${edgeObj.from}').addE('${edgeObj.label}')` +
     `.to(g.V().has('id','${edgeObj.to}'))`;
 

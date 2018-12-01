@@ -8,6 +8,8 @@
     ],
     "target": "es2015",
     "strict": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": false,
     "outDir": "./lib",
     "preserveConstEnums": true,
     "removeComments": true,

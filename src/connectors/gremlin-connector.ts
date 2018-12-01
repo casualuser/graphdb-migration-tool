@@ -3,10 +3,11 @@ import * as convertHrtime from 'convert-hrtime';
 import * as Gremlin from 'gremlin';
 import { stdout as log } from 'single-line-log';
 import * as GraphHelper from '../helpers/graphHelper';
-import { Edge, GraphInfo, Vertex, etype } from '../models/graph-model';
+import { Edge, Etype, GraphInfo, Vertex } from '../models/graph-model';
 import { isNullOrUndefined } from 'util';
+import { OutputConnector } from '../models/connector-model';
 
-export class GremlinConnector {
+export class GremlinConnector implements OutputConnector {
   private client: Gremlin.GremlinClient;
   private batchSize: number;
   private upsert: boolean;
@@ -46,10 +47,12 @@ export class GremlinConnector {
       this.batchSize,
       (value, key, cb) => {
         this.checkExists(
-          etype.vertex,
+          Etype.vertex,
           value.properties.id,
           (err: any, res: boolean) => {
-            if (err) cb(err);
+            if (err) {
+              cb(err);
+            }
             const command = res
               ? GraphHelper.getUpdateVertexQuery(value)
               : GraphHelper.getAddVertexQuery(value);
@@ -106,24 +109,33 @@ export class GremlinConnector {
     );
   }
 
+  public saveOutput(data: GraphInfo, callback: any) {
+    this.createGraph(data, (err: any) => {
+      this.client.closeConnection();
+      callback(err);
+    });
+  }
+
   public closeConnection() {
     this.client.closeConnection();
   }
 
-  public checkExists(type: etype, id: string, callback: any) {
+  public checkExists(type: Etype, id: string, callback: any) {
     if (!this.upsert || isNullOrUndefined(id)) {
       callback(null, false);
       return;
     }
     let query: string;
-    if (type === etype.vertex) {
+    if (type === Etype.vertex) {
       query = `g.V().hasId('${id}').count()`;
     } else {
       query = `g.E().hasId('${id}').count()`;
     }
     this.client.execute(query, (err, res) => {
-      var exists = false;
-      if (res && res.length > 0 && res[0] > 0) exists = true;
+      let exists = false;
+      if (res && res.length > 0 && res[0] > 0) {
+        exists = true;
+      }
       callback(err, exists);
     });
   }
