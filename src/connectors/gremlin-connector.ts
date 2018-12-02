@@ -11,6 +11,8 @@ export class GremlinConnector implements OutputConnector {
   private client: Gremlin.GremlinClient;
   private batchSize: number;
   private upsert: boolean;
+  private retry: number;
+  private defaultRetry = 3;
   private defaultBatchSize = 10;
 
   constructor(config: any) {
@@ -24,6 +26,7 @@ export class GremlinConnector implements OutputConnector {
       ? config.batchSize
       : this.defaultBatchSize;
     this.upsert = config.upsert;
+    this.retry = config.retry ? config.retry : this.defaultRetry;
   }
 
   public createGraph(graphInfo: GraphInfo, callback: any) {
@@ -40,73 +43,99 @@ export class GremlinConnector implements OutputConnector {
     );
   }
 
-  public addVertices(vertices: Vertex[], callback: any) {
+  private addToGraph(type: Etype, arr: Vertex[] | Edge[], callback: any) {
     const timer = process.hrtime();
+    const retryableIterator = this.getRetryable(
+      this.vertexEdgeIterator.bind(this)
+    );
+    let completedCnt = 0;
     async.eachOfLimit(
-      vertices,
+      arr as Vertex[] & Edge[],
+
       this.batchSize,
       (value, key, cb) => {
-        this.checkExists(
-          Etype.vertex,
-          value.properties.id,
-          (err: any, res: boolean) => {
-            if (err) {
-              cb(err);
-            }
-            const command = res
-              ? GraphHelper.getUpdateVertexQuery(value)
-              : GraphHelper.getAddVertexQuery(value);
-            this.client.execute(command, (err, res) => {
-              if (!err) {
-                log(
-                  `Added vertices: ${(key as number) + 1}/${vertices.length}`
-                );
-              }
-              cb(err as any);
-            });
+        retryableIterator(type, value, (err: any) => {
+          if (!err) {
+            log(`Added(${type}): ${++completedCnt}/${arr.length}`);
           }
-        );
+          cb(err);
+        });
       },
       err => {
-        if (err) {
-          callback(err);
-        } else {
-          console.log('\nFinished adding vertices');
-          const timeTaken = convertHrtime(process.hrtime(timer)).seconds;
-          console.log(
-            `Added ${vertices.length} vertices in ${timeTaken} seconds`
-          );
-          callback();
-        }
+        callback(err);
       }
     );
   }
 
+  private vertexEdgeIterator(type: Etype, value: Vertex | Edge, callback: any) {
+    const id = value.properties ? value.properties.id : null;
+
+    async.waterfall(
+      [
+        (cb: any) => this.checkExists(type, id, cb),
+        (res: boolean, cb: any) => {
+          const command = this.getCommand(type, value, res);
+          this.client.execute(command, cb);
+        },
+      ],
+      callback
+    );
+  }
+
+  private getRetryable(task: any) {
+    if (this.retry > 0)
+      return async.retryable(
+        {
+          times: this.retry,
+          interval: function(retryCount) {
+            return 500 * Math.pow(2, retryCount);
+          },
+        },
+        task
+      );
+    else return task;
+  }
+
+  private getCommand(
+    type: Etype,
+    value: Vertex | Edge,
+    update: boolean = false
+  ): string {
+    if (type == Etype.vertex) {
+      return update
+        ? GraphHelper.getUpdateVertexQuery(value as Vertex)
+        : GraphHelper.getAddVertexQuery(value as Vertex);
+    } else {
+      return update
+        ? GraphHelper.getUpdateEdgeQuery(value as Edge)
+        : GraphHelper.getAddEdgeQuery(value as Edge);
+    }
+  }
+
+  public addVertices(vertices: Vertex[], callback: any) {
+    const timer = process.hrtime();
+    this.addToGraph(Etype.vertex, vertices, (err: any) => {
+      if (!err) {
+        console.log('\nFinished adding vertices');
+        const timeTaken = convertHrtime(process.hrtime(timer)).seconds;
+        console.log(
+          `Added ${vertices.length} vertices in ${timeTaken} seconds`
+        );
+      }
+      callback(err);
+    });
+  }
+
   public addEdges(edges: Edge[], callback: any) {
     const timer = process.hrtime();
-    async.eachOfLimit(
-      edges,
-      this.batchSize,
-      (value, key, cb) => {
-        const command = GraphHelper.getAddEdgeQuery(value);
-        this.client.execute(command, (err, res) => {
-          if (!err) {
-            log(`Adding edges: ${(key as number) + 1}/${edges.length}`);
-          }
-          cb(err as any);
-        });
-      },
-      err => {
-        if (err) {
-          callback(err);
-        } else {
-          console.log('\nFinished adding edges');
-          const timeTaken = convertHrtime(process.hrtime(timer)).seconds;
-          console.log(`Added ${edges.length} edges in ${timeTaken} seconds`);
-          callback();
-        }
+    this.addToGraph(Etype.edge, edges, (err: any) => {
+      if (!err) {
+        console.log('\nFinished adding edges');
+        const timeTaken = convertHrtime(process.hrtime(timer)).seconds;
+        console.log(`Added ${edges.length} edges in ${timeTaken} seconds`);
       }
-    );
+      callback(err);
+    });
   }
 
   public saveOutput(data: GraphInfo, callback: any) {

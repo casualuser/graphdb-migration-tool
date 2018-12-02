@@ -10,9 +10,9 @@ export function getUpdateVertexQuery(vertexObj: Vertex): string {
   return query + getPropertiesQuery(vertexObj);
 }
 
-export function getUpdateEdgeQuery(vertexObj: Vertex): string {
-  const query = `g.E().hasId('${vertexObj.properties.id}')`;
-  return query + getPropertiesQuery(vertexObj);
+export function getUpdateEdgeQuery(edgeObj: Edge): string {
+  const query = `g.E().hasId('${edgeObj.properties.id}')`;
+  return query + getPropertiesQuery(edgeObj);
 }
 
 export function getAddEdgeQuery(edgeObj: Edge): string {
@@ -49,7 +49,10 @@ export function removeDuplicateVertexes(vertexes: Vertex[]) {
 export function removeDuplicateEdges(edges: Edge[]) {
   const seen: { [key: string]: boolean } = {};
   return edges.filter(edge => {
-    const edgeId = `${edge.label}-${edge.from}-${edge.to}`;
+    let edgeId = `${edge.label}-${edge.from}-${edge.to}`;
+    if (edge.properties && edge.properties.id) {
+      edgeId = edge.properties.id;
+    }
     return seen.hasOwnProperty(edgeId) ? false : (seen[edgeId] = true);
   });
 }

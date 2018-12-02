@@ -21,8 +21,12 @@ export class Transformer {
     this.validator = new Ajv({ jsonPointers: true });
   }
 
+  private getCompiledTemplate(template: string) {
+    return handlebars.compile(template);
+  }
+
   public parseTemplate(template: string, data: object): string {
-    const compiledTemplate = handlebars.compile(template);
+    const compiledTemplate = this.getCompiledTemplate(template);
     return compiledTemplate(data);
   }
 
@@ -34,8 +38,10 @@ export class Transformer {
     let vertices: Vertex[] = [];
     let edges: Edge[] = [];
 
+    const compiledTemplate = this.getCompiledTemplate(template);
+
     jsonArray.forEach(doc => {
-      const transformedDoc = this.parseTemplate(template, doc);
+      const transformedDoc = compiledTemplate(doc);
       const result: GraphInfo = jsonlint.parse(transformedDoc);
       if (validationSchema) {
         this.validateJSON(result, validationSchema);
@@ -87,5 +93,8 @@ export class Transformer {
 
   private registerHelpers(): void {
     handlebars.registerHelper('$guid', () => uuid.v4());
+    handlebars.registerHelper('toJSON', function(object) {
+      return new handlebars.SafeString(JSON.stringify(object));
+    });
   }
 }
