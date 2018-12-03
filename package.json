@@ -1,6 +1,6 @@
 {
   "name": "graphdb-migration-tool",
-  "version": "0.2.0-beta.0",
+  "version": "0.2.0-beta.1",
   "description": "graphdb-migration-tool",
   "license": "MIT",
   "repository": "https://github.com/abbasc52/graphdb-migration-tool",
