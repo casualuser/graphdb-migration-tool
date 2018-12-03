@@ -1,24 +1,31 @@
 import { Edge, Vertex } from '../models/graph-model';
+import { escapeSingleQuote } from '../utils/safeString';
 
 export function getAddVertexQuery(vertexObj: Vertex): string {
-  const query = `g.addV('${vertexObj.label}')`;
+  const label = escapeSingleQuote(vertexObj.label);
+  const query = `g.addV('${label}')`;
   return query + getPropertiesQuery(vertexObj);
 }
 
 export function getUpdateVertexQuery(vertexObj: Vertex): string {
-  const query = `g.V().hasId('${vertexObj.properties.id}')`;
+  const id = escapeSingleQuote(vertexObj.properties.id);
+  const query = `g.V().hasId('${id}')`;
   return query + getPropertiesQuery(vertexObj);
 }
 
 export function getUpdateEdgeQuery(edgeObj: Edge): string {
-  const query = `g.E().hasId('${edgeObj.properties.id}')`;
+  const id = escapeSingleQuote(edgeObj.properties.id);
+  const query = `g.E().hasId('${id}')`;
   return query + getPropertiesQuery(edgeObj);
 }
 
 export function getAddEdgeQuery(edgeObj: Edge): string {
+  const from = escapeSingleQuote(edgeObj.from);
+  const to = escapeSingleQuote(edgeObj.to);
+  const label = escapeSingleQuote(edgeObj.label);
   const query =
-    `g.V().has('id','${edgeObj.from}').addE('${edgeObj.label}')` +
-    `.to(g.V().has('id','${edgeObj.to}'))`;
+    `g.V().has('id','${from}').addE('${label}')` +
+    `.to(g.V().has('id','${to}'))`;
 
   return query + getPropertiesQuery(edgeObj);
 }
@@ -29,9 +36,11 @@ export function getPropertiesQuery(obj: Vertex | Edge): string {
     for (const key of Object.keys(obj.properties)) {
       let value = obj.properties[key];
       if (typeof value === 'string') {
+        value = escapeSingleQuote(value);
         value = `'${value}'`;
       }
-      query += `.property('${key}',${value})`;
+      const safeKey = escapeSingleQuote(key);
+      query += `.property('${safeKey}',${value})`;
     }
   }
   return query;
